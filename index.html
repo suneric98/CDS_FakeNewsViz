@@ -1,0 +1,168 @@
+<html>
+
+<body>
+    <script src="http:////d3js.org/d3.v4.min.js">
+    </script>
+    <p id="all">
+        <div id="raw_text"> </div>
+    </p>
+</body>
+<script>
+    let width = 1000,
+        height = 500;
+
+    let svg = d3.select("body").append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+    d3.json("body_info.json", function (data) {
+        d3.json("train_feats.json", function (data2) {
+            body_info(data, data2);
+        });
+    });
+
+    function body_info(dat, dat2) {
+        //cleaning body text data
+        for (let i = 0; i < 3000; i++) { //iterate through all elements in bodytext
+            if (dat[i] != undefined) { //if element exists
+                let ele = dat[i];
+                let words = ele["raw"].split(/(\s+)/); //raw split by space
+                ele["words"] = words;
+            }
+        }
+
+        //cleaning headline data
+        let headline_data = [];
+        dat2.forEach(function (d, i) {
+            let words = d.headline_data.raw.split(/(\s+)/);
+            d["words"] = words;
+            headline_data.push(d);
+        });
+
+        console.log(dat);
+        console.log(headline_data);
+
+        for (let a = 0; a < 20; a++) { //looping through headlines
+            let head = headline_data[a];
+            let body = dat[headline_data[a].body_id];
+            displayHead(a, head, body);
+            displayBody(headline_data[a].body_id, head, body);
+        }
+
+        function displayHead(index, head, body) { //displaying headline
+            let headline = d3.select("p#all").append("g")
+                .attr("class", "headline" + index);
+            head["words"].forEach(function (d, i) {
+                headline.append("span")
+                    .text(headline_data[index]["words"][i])
+                    .style("font-size", "40px")
+                    .style("background-color", function () {
+                        let d2 = d.toLowerCase();
+                        if (d2.substring(d2.length - 1) === "s") {
+                            d2 = d2.substring(0, d2.length - 1);
+                        }
+                        if (head.headline_data.nouns.includes(d2)) {
+                            return "#CD5C5C"; //indian red
+                        } else if (head.headline_data.verbs.includes(d2)) {
+                            return "#4169E1"; //royal blue
+                        } else if (head.headline_data["adjectives"].includes(d2)) {
+                            return "teal"; //darksea green
+                        } else if (head.headline_data["adverbs"].includes(d2)) {
+                            return "#FF1493"; //deep pink
+                        } else {
+                            return "white";
+                        }
+                    })
+                    .on("mouseover", function(){
+                        console.log(head); console.log(body);//debug
+                    });
+                headline.append("span").text(" ").style("font-size", "40px");
+            });
+            headline.append("br");
+        }
+
+        function displayBody(index, head, body) { //Displaying the body
+            let firstsentence = true;
+            let text = d3.select("p#all").append("g")
+                .attr("class", "text" + index);
+            body["words"].forEach(function (d, i) { //word by word span
+                text.append("span")
+                    .text(d)
+                    .style("color", "black")
+                    .style("text-decoration",
+                        function () {
+                            let value = "";
+                            if (firstsentence) {
+                                value = "underline";
+                            } else {
+                                value = "";
+                            }
+                            if (firstsentence && d.indexOf(".") !== -1) {
+                                firstsentence = false;
+                            }
+                            return value;
+                        })
+                    .style("background-color", function () {
+                        let d2 = d.toLowerCase();
+                        if (d2.substring(d2.length - 1) === "s") {
+                            d2 = d2.substring(0, d2.length - 1);
+                        }
+                        if (head.headline_data["nouns"].includes(d2)) {
+                            return "#CD5C5C"; //indian red
+                        } else if (head.headline_data["verbs"].includes(d2)) {
+                            return "#4169E1"; //royal blue
+                        } else if (head.headline_data["adjectives"].includes(d2)) {
+                            return "teal"; //darksea green
+                        } else if (head.headline_data["adverbs"].includes(d2)) {
+                            return "#FF1493"; //deep pink
+                        } else {
+                            return "white";
+                        }
+                    })
+                    .on("mouseover", function () {
+                        let text = "";
+                        let d2 = d.toLowerCase();
+                        if (d2.substring(d2.length - 1) === "s") {
+                            d2 = d2.substring(0, d2.length - 1);
+                        }
+                        if (head.headline_data["adjectives"].includes(d2)) {
+                            html = "Adjective";
+                        } else if (head.headline_data["nouns"].includes(d2)) {
+                            html = "Noun<br>Noun Cosine Similarity Value: " + head["cos_nouns_fst"];
+                        } else if (head.headline_data["verbs"].includes(d2)) {
+                            html = "Verb";
+                        } else if (head.headline_data["adverbs"].includes(d2)) {
+                            html = "Adverb";
+                        } else {
+                            html = "<br><br>";
+                        }
+
+                        tooltip.html(html)
+                            .style("left", (d3.event.pageX + 20) + "px")
+                            .style("top", (d3.event.pageY - 15) + "px");
+                        tooltip.transition()
+                            .duration(200)
+                            .style("opacity", 0.9);
+                    })
+                    .on("mouseout", function () {
+                        tooltip.transition()
+                            .duration(300)
+                            .style("opacity", 0);
+                    });
+                text.append("span").text(" ") //add space between words
+                    .style("text-decoration", function () {
+                        if (firstsentence) {
+                            return "underline"
+                        }
+                    });
+            });
+            let tooltip = d3.select("p#all").append("div")
+                .attr("class", "tooltip")
+                .html("<br><br>")
+                .style("opacity", 0)
+                .style("margin", "auto");
+        }
+    }
+</script>
+
+</html>
