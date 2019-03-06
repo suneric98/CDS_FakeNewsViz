@@ -1,80 +1,277 @@
 <html>
-
+<head>
+    <style>
+        text {font-family: "Gill Sans"}
+        span {font-family: "Gill Sans"}
+        .button{ padding: 15px 32px; text-align: center; font-size: 16px; cursor:pointer }
+        div.a {margin: 10px 0 10px 10px;
+      width: 800;
+      text-align: center;
+      margin: 0 auto}
+    </style>
+    <script src="http:////d3js.org/d3.v4.min.js"></script>
+</head>
 <body>
-    <script src="http:////d3js.org/d3.v4.min.js">
-    </script>
-    <p id="all">
-        <div id="raw_text"> </div>
-    </p>
+    <div class="a">
+        <input style = "width: 600px"id="searchbar" type="text" placeholder =
+        "WIP article headline">
+    </div>
+    <div class="a" style="text-align: center; padding:2%">
+        <button class = "button">5 Random Articles</button>
+    </div>
+    <div id="all"></div>
 </body>
 <script>
     let width = 1000,
         height = 500;
 
-    let svg = d3.select("body").append("svg")
-        .attr("width", width)
-        .attr("height", height);
+    let type_words = ["nouns","verbs","adjectives","adverbs","first sentence","significant sentence", "normal"];
+    let colors = ["indianred","royalblue","teal","deeppink","yellow","lawngreen", "black"];
+    //[#CD5C5C, #4169E1, #008080, #FF1493, #FFFF00, #7CFC00]
+
+    let headline_names = [];
+    headline_id = [];
+
+    //prereq: color2 is either yellow or lawngreen, color1 is one of the first 4 colors
+    function blend_color(color1, color2){
+        if(color1 === "indianred" && color2 === "yellow"){
+            return "#e4a533";
+        } else if(color1 === "royalblue" && color2 === "yellow"){
+            return "#96ac7c";
+        } else if(color1 === "teal" && color2 === "yellow"){
+            return "#73b946";
+        } else if(color1 === "deeppink" && color2 === "yellow"){
+            return "#ff7e51"
+        } else if(color1 === "indianred" && color2 === "lawngreen"){
+            return "#a9a433";
+        } else if(color1 === "royalblue" && color2 === "lawngreen"){
+            return "#5cab7c";
+        } else if(color1 === "teal" && color2 === "lawngreen"){
+            return "#3ebe40";
+        } else if(color1 === "deeppink" && color2 === "lawngreen"){
+            return "#c47c51";
+        } else if((color1 === "yellow" && color2 === "lawngreen") || (color1 === "lawngreen" && color2 === "yellow")){
+            return "#befe00";
+        }
+    }
+
+    function class_to_color(class_id){
+        switch(class_id){
+            case "noun":
+                return colors[0];
+                break;
+            case "verb":
+                return colors[1];
+                break;
+            case "adj":
+                return colors[2];
+                break;
+            case "adv":
+                return colors[3];
+                break;
+            case "first":
+                return colors[4];
+                break;
+            case "sig":
+                return colors[5];
+                break;
+            case "firstsig": 
+                return blend_color(colors[4], colors[5]);
+            case "firstnoun": 
+                return blend_color(colors[0], colors[4]);
+                break;
+            case "firstverb":
+                return blend_color(colors[1], colors[4]);
+                break;
+            case "firstadj":
+                return blend_color(colors[2], colors[4]);
+                break;
+            case "firstadv":
+                return blend_color(colors[3], colors[4]);
+                break;
+            case "signoun":
+                return blend_color(colors[0], colors[5]);
+                break;
+            case "sigverb":
+                return blend_color(colors[1], colors[5]);
+                break;
+            case "sigadj":
+                return blend_color(colors[2], colors[5]);
+                break;
+            case "sigadv":
+                return blend_color(colors[3], colors[5]);
+                break;
+            case "firstsignoun":
+                return blend_color(colors[0], colors[4]);
+                break;
+            case "firstsigverb":
+                return blend_color(colors[1], colors[4]);
+                break;
+            case "firstsigadj":
+                return blend_color(colors[2], colors[4]);
+                break;
+            case "firstsigadv":
+                return blend_color(colors[3], colors[4]);
+                break;
+            default:
+                break;
+        }
+        return "white";
+    }
+
+    //classes can be combination of 3 words: first, sig, and type of word
+    function making_class(word, head, sig_sent, first_sent){
+        let value = "";
+        let nouns = head.headline_data.nouns;
+        let verbs = head.headline_data.verbs;
+        let adjs = head.headline_data.adjectives;
+        let advs = head.headline_data.adverbs;
+        let word_lower = word.toLowerCase();
+        word_lower = word_lower.replace(/[^A-za-z0-9]/g, "");
+        word_lower = word_lower.replace(/(\'s)$/, "");
+        if (word_lower.substring(word_lower.length - 1) === "s") {
+            word_lower_s = word_lower.substring(0, word_lower.length - 1);
+            word_lower_d = word_lower_s + "d";
+        } else if(word_lower.substring(word_lower.length - 1) === "d"){
+            word_lower_d = word_lower.substring(0, word_lower.length - 1);
+            word_lower_s = word_lower_d + "s";
+        } else {
+            word_lower_d = word_lower;
+            word_lower_s = word_lower;
+        }
+
+        if(first_sent){
+            value = value + "first";
+        }
+        if(sig_sent){
+            value = value + "sig";
+        }
+
+        if (nouns.includes(word_lower) || nouns.includes(word_lower_s) || nouns.includes(word_lower_d)) {
+            value = value + "noun";
+        } else if (verbs.includes(word_lower) || verbs.includes(word_lower_s) || verbs.includes(word_lower_d)) {
+            value = value + "verb";
+        } else if (adjs.includes(word_lower) || adjs.includes(word_lower_s)|| nouns.includes(word_lower_d)) {
+            value = value + "adj";
+        } else if (advs.includes(word_lower) || advs.includes(word_lower_s)|| nouns.includes(word_lower_d)) {
+            value = value + "adv";
+        }
+        return value;
+    }
+
+    //during mouseover when selecting opacity, changes the opacity of words
+    function select_class_opacity(text, class_word){
+        if(class_word === "first"){
+            text.selectAll(".first").style("opacity",1);
+            text.selectAll(".firstnoun").style("opacity",1);
+            text.selectAll(".firstverb").style("opacity",1);
+            text.selectAll(".firstadj").style("opacity",1);
+            text.selectAll(".firstadv").style("opacity",1);
+            text.selectAll(".firstsig").style("opacity",1);
+            text.selectAll(".firstsignoun").style("opacity",1);
+            text.selectAll(".firstsigverb").style("opacity",1);
+            text.selectAll(".firstsigadj").style("opacity",1);
+            text.selectAll(".firstsigadv").style("opacity",1);
+        } else if(class_word === "sig"){
+            text.selectAll(".sig").style("opacity",1);
+            text.selectAll(".signoun").style("opacity",1);
+            text.selectAll(".sigverb").style("opacity",1);
+            text.selectAll(".sigadj").style("opacity",1);
+            text.selectAll(".sigadv").style("opacity",1);
+            text.selectAll(".firstsig").style("opacity",1);
+            text.selectAll(".firstsignoun").style("opacity",1);
+            text.selectAll(".firstsigverb").style("opacity",1);
+            text.selectAll(".firstsigadj").style("opacity",1);
+            text.selectAll(".firstsigadv").style("opacity",1);
+        } else {
+            text.selectAll("." + class_word).style("opacity",1);
+            text.selectAll(".first" + class_word).style("opacity",1);
+            text.selectAll(".sig" + class_word).style("opacity",1);
+            text.selectAll(".firstsig" + class_word).style("opacity",1);
+        }
+    }
 
     d3.json("body_info.json", function (data) {
         d3.json("train_feats.json", function (data2) {
-            body_info(data, data2);
+            d3.csv("stances_tr.csv", function(data3){
+                body_info(data, data2, data3);
+            });
         });
     });
 
-    function body_info(dat, dat2) {
+    function body_info(bodies, headlines, results) {
         //cleaning body text data
-        for (let i = 0; i < 3000; i++) { //iterate through all elements in bodytext
-            if (dat[i] != undefined) { //if element exists
-                let ele = dat[i];
+        for (let i = 0; i < 5000; i++) {
+            if (bodies[i] != undefined) { //if element exists
+                let ele = bodies[i];
+                let sentences = ele["raw"].split(".");
                 let words = ele["raw"].split(/(\s+)/); //raw split by space
+                ele["sentences"] = sentences;
                 ele["words"] = words;
             }
         }
 
         //cleaning headline data
         let headline_data = [];
-        dat2.forEach(function (d, i) {
-            let words = d.headline_data.raw.split(/(\s+)/);
+        headlines.forEach(function (d, i) {
+            let raw = d.headline_data.raw.replace(/-/g, " ");
+            let words = raw.split(/(\s)/g);
             d["words"] = words;
             headline_data.push(d);
+            headline_names.push(d.headline_data.raw);
+            let dict = {};
+            dict[d.headline_data.raw] = i;
+            headline_id.push(dict);
         });
 
-        console.log(dat);
-        console.log(headline_data);
+        //cleaning result data
 
-        for (let a = 0; a < 20; a++) { //looping through headlines
-            let head = headline_data[a];
-            let body = dat[headline_data[a].body_id];
-            displayHead(a, head, body);
-            displayBody(headline_data[a].body_id, head, body);
+        console.log(bodies);
+        console.log(headline_data);
+        console.log(results);
+
+        let article_id;
+        function random_articles(){
+            d3.selectAll("span").remove();
+            d3.selectAll("g").remove();
+            d3.selectAll(".alldiv").remove();
+            d3.selectAll(".tooltip").remove();
+            for (article_id = 0; article_id < 5; article_id++) { //looping through headlines
+                let index = Math.floor(Math.random() * headline_data.length);
+                // let index = 11534;
+                console.log(index);
+                let head = headline_data[index];
+                let body = bodies[headline_data[index].body_id];
+                displayHead(index, head, body);
+                displayBody(headline_data[index].body_id, head, body);
+            }
+        }
+        d3.select(".button").on("click", random_articles);
+
+        function choose_selected(id){
+            console.log(id);
+            let head = headline_data[index];
+            let body = bodies[headline_data[index].body_id];
+            displayBody(id, head, body);
+            displayBody(headline_data[id].body_id, head, body);
         }
 
         function displayHead(index, head, body) { //displaying headline
-            let headline = d3.select("p#all").append("g")
+            let article = d3.select("#all").append("g").attr("id", "article" + article_id);
+            let headline = article.append("div")
                 .attr("class", "headline" + index);
-            head["words"].forEach(function (d, i) {
+            head["words"].forEach(function (word, i) {
+                let span_class = making_class(word, head, false, false);
                 headline.append("span")
+                    .attr("class",span_class)
                     .text(headline_data[index]["words"][i])
                     .style("font-size", "40px")
                     .style("background-color", function () {
-                        let d2 = d.toLowerCase();
-                        if (d2.substring(d2.length - 1) === "s") {
-                            d2 = d2.substring(0, d2.length - 1);
-                        }
-                        if (head.headline_data.nouns.includes(d2)) {
-                            return "#CD5C5C"; //indian red
-                        } else if (head.headline_data.verbs.includes(d2)) {
-                            return "#4169E1"; //royal blue
-                        } else if (head.headline_data["adjectives"].includes(d2)) {
-                            return "teal"; //darksea green
-                        } else if (head.headline_data["adverbs"].includes(d2)) {
-                            return "#FF1493"; //deep pink
-                        } else {
-                            return "white";
-                        }
+                        return class_to_color(span_class);
                     })
                     .on("mouseover", function(){
-                        console.log(head); console.log(body);//debug
+                        console.log(head); console.log(body);
+                        //debug
                     });
                 headline.append("span").text(" ").style("font-size", "40px");
             });
@@ -82,87 +279,117 @@
         }
 
         function displayBody(index, head, body) { //Displaying the body
-            let firstsentence = true;
-            let text = d3.select("p#all").append("g")
+            article = d3.select("#article" + article_id);
+            let text = article.append("div")
                 .attr("class", "text" + index);
-            body["words"].forEach(function (d, i) { //word by word span
-                text.append("span")
-                    .text(d)
-                    .style("color", "black")
-                    .style("text-decoration",
-                        function () {
-                            let value = "";
-                            if (firstsentence) {
-                                value = "underline";
-                            } else {
-                                value = "";
-                            }
-                            if (firstsentence && d.indexOf(".") !== -1) {
-                                firstsentence = false;
-                            }
-                            return value;
-                        })
-                    .style("background-color", function () {
-                        let d2 = d.toLowerCase();
-                        if (d2.substring(d2.length - 1) === "s") {
-                            d2 = d2.substring(0, d2.length - 1);
-                        }
-                        if (head.headline_data["nouns"].includes(d2)) {
-                            return "#CD5C5C"; //indian red
-                        } else if (head.headline_data["verbs"].includes(d2)) {
-                            return "#4169E1"; //royal blue
-                        } else if (head.headline_data["adjectives"].includes(d2)) {
-                            return "teal"; //darksea green
-                        } else if (head.headline_data["adverbs"].includes(d2)) {
-                            return "#FF1493"; //deep pink
-                        } else {
-                            return "white";
-                        }
-                    })
-                    .on("mouseover", function () {
-                        let text = "";
-                        let d2 = d.toLowerCase();
-                        if (d2.substring(d2.length - 1) === "s") {
-                            d2 = d2.substring(0, d2.length - 1);
-                        }
-                        if (head.headline_data["adjectives"].includes(d2)) {
-                            html = "Adjective";
-                        } else if (head.headline_data["nouns"].includes(d2)) {
-                            html = "Noun<br>Noun Cosine Similarity Value: " + head["cos_nouns_fst"];
-                        } else if (head.headline_data["verbs"].includes(d2)) {
-                            html = "Verb";
-                        } else if (head.headline_data["adverbs"].includes(d2)) {
-                            html = "Adverb";
-                        } else {
-                            html = "<br><br>";
-                        }
 
-                        tooltip.html(html)
-                            .style("left", (d3.event.pageX + 20) + "px")
-                            .style("top", (d3.event.pageY - 15) + "px");
-                        tooltip.transition()
-                            .duration(200)
-                            .style("opacity", 0.9);
-                    })
-                    .on("mouseout", function () {
-                        tooltip.transition()
-                            .duration(300)
-                            .style("opacity", 0);
-                    });
-                text.append("span").text(" ") //add space between words
-                    .style("text-decoration", function () {
-                        if (firstsentence) {
-                            return "underline"
-                        }
-                    });
-            });
-            let tooltip = d3.select("p#all").append("div")
+            let first_sentence = body.first_sentence.raw;
+            let significant_sentence = body.significant_sentence.raw;
+            let firstsent_firstind = body.raw.indexOf(first_sentence);
+            let firstsent_lastind = firstsent_firstind + first_sentence.length;
+            let sigsent_firstind = body.raw.indexOf(significant_sentence);
+            let sigsent_lastind = body.raw.indexOf(significant_sentence) + significant_sentence.length;
+            let tracking_ind = 0;
+            body["sentences"].forEach(function(sent,i){ //iterate through all sentences
+                if(i !== body["sentences"].length - 1){
+                    sent = sent + ".";
+                }
+                
+                sent.split(/(\s+)/).forEach(function(word, i2){ //iterate through words in sentence
+                    // console.log(tracking_ind, firstsent_firstind, firstsent_lastind, sigsent_firstind, sigsent_lastind);
+                    let sig_sent = false;
+                    if(tracking_ind >= sigsent_firstind && tracking_ind <= sigsent_lastind){
+                        sig_sent = true;
+                    }
+
+                    let first_sent = false;
+                    if(tracking_ind >= firstsent_firstind && tracking_ind <= firstsent_lastind){
+                        first_sent = true;
+                    }
+
+                    tracking_ind = tracking_ind + word.length;
+                    let span_class = making_class(word, head, sig_sent, first_sent);
+                    let span_add = text.append("span")
+                        .attr("class",function(){
+                            return span_class;
+                        })
+                        .text(word)
+                        .style("background-color", function(){
+                            return class_to_color(span_class);
+                        });
+                    
+                    text.append("span").text(" ") //add space between words
+                        .attr("class", function(){
+                            if(span_class.indexOf("first") !== -1 && span_class.indexOf("sig") !== -1){
+                                return "firstsig";
+                            } else if(span_class.indexOf("first") !== -1){
+                                return "first";
+                            } else if(span_class.indexOf("sig") !== -1){
+                                return "sig";
+                            }
+                        })
+                        .style("background-color", function(){
+                            if(span_class.indexOf("first") !== -1 && span_class.indexOf("sig") !== -1){
+                                return blend_color(colors[4], colors[5]);
+                            } else if(span_class.indexOf("first") !== -1){
+                                return colors[4];
+                            } else if(span_class.indexOf("sig") !== -1){
+                                return colors[5];
+                            }
+                            return "white";
+                        });
+                })
+            })
+
+            article.append("div")
+                .attr("class", "alldiv")
+                .attr("id","type_words" + index);
+            let tooltip = article.append("div")
                 .attr("class", "tooltip")
                 .html("<br><br>")
-                .style("opacity", 0)
-                .style("margin", "auto");
+                .style("opactiy",0);
+            type_words.forEach(function(d, i){
+                d3.select("#type_words" + index).append("span")
+                    .text(d + " ")
+                    .style("color", colors[i])
+                    .on("mouseover",function(){
+                        let html = "First Sentence cos similarity value: " + head["cos_tokens_fst"].toFixed(2) + "<br>";
+                        html = html + "Significant Sentence cos similarity value: " + head["cos_tokens_sig"].toFixed(2);
+                        tooltip.html(html);
+                        tooltip.transition().duration(300).style("opacity",1);
+                        let word = d3.select(this);
+                        let word_color = word.style("color");
+                        text.selectAll("span").style("opacity",0.5);
+                        if(word_color === colors[0]){
+                            select_class_opacity(text,"noun");
+                        } else if(word_color === colors[1]){
+                            select_class_opacity(text,"verb");
+                        } else if(word_color === colors[2]){
+                            select_class_opacity(text,"adj");
+                        } else if(word_color === colors[3]) {
+                            select_class_opacity(text,"adv");
+                        } else if(word_color === colors[4]){
+                            select_class_opacity(text, "first");
+                        } else if(word_color === colors[5]){
+                            select_class_opacity(text, "sig");
+                        } else if(word_color === colors[6]){
+                            text.selectAll("span").style("opacity",1);
+                        }
+                    })
+                    .on("mouseout",function(){
+                        tooltip.transition().duration(300).style("opacity",0);
+                    });
+            });
         }
     }
+
+// $("#searchbar").autocomplete({
+//     lookup: headline_names,
+//     onSelect: function (suggestion){
+//         select = suggestion.value;
+//         choose_selected(headline_id[select]);
+//     }
+// })
 </script>
 
 </html>
