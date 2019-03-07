@@ -1,13 +1,16 @@
 <html>
+<meta charset = "utf-8">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
 <head>
     <style>
         text {font-family: "Gill Sans"}
         span {font-family: "Gill Sans"}
-        .button{ padding: 15px 32px; text-align: center; font-size: 16px; cursor:pointer }
+        .button{ padding: 15px 32px; text-align: center; font-size: 16px; cursor:pointer}
         div.a {margin: 10px 0 10px 10px;
       width: 800;
       text-align: center;
-      margin: 0 auto}
+      margin: 0 auto;
+      box-sizing: border-box}
     </style>
     <script src="https:////d3js.org/d3.v4.min.js"></script>
 </head>
@@ -17,7 +20,7 @@
         "WIP article headline">
     </div>
     <div class="a" style="text-align: center; padding:2%">
-        <button class = "button">5 Random Articles</button>
+        <button id = "button" class = "btn-primary" style = "cursor:pointer; border-radius:10px">5 Random Articles</button>
     </div>
     <div id="all"></div>
 </body>
@@ -232,10 +235,7 @@
 
         let article_id;
         function random_articles(){
-            d3.selectAll("span").remove();
-            d3.selectAll("g").remove();
-            d3.selectAll(".alldiv").remove();
-            d3.selectAll(".tooltip").remove();
+            d3.selectAll("#all > *").remove();
             for (article_id = 0; article_id < 5; article_id++) { //looping through headlines
                 let index = Math.floor(Math.random() * headline_data.length);
                 // let index = 11534;
@@ -246,7 +246,7 @@
                 displayBody(headline_data[index].body_id, head, body);
             }
         }
-        d3.select(".button").on("click", random_articles);
+        d3.select("#button").on("click", random_articles);
 
         function choose_selected(id){
             console.log(id);
@@ -257,7 +257,8 @@
         }
 
         function displayHead(index, head, body) { //displaying headline
-            let article = d3.select("#all").append("g").attr("id", "article" + article_id);
+            let article = d3.select("#all").append("div")
+                .attr("class","container").attr("id", "article" + article_id);
             let headline = article.append("div")
                 .attr("class", "headline" + index);
             head["words"].forEach(function (word, i) {
@@ -345,9 +346,10 @@
                 .attr("class", "alldiv")
                 .attr("id","type_words" + index);
             let tooltip = article.append("div")
-                .attr("class", "tooltip")
-                .html("<br><br>")
-                .style("opactiy",0);
+                .attr("class", "container")
+                .attr("id","tooltip")
+                .html("First Sentence cos similarity value: " + "<br>" + "Significant Sentence cos similarity value: ")
+                .style("opacity",0);
             type_words.forEach(function(d, i){
                 d3.select("#type_words" + index).append("span")
                     .text(d + " ")
