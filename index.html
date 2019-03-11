@@ -3,6 +3,7 @@
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
     crossorigin="anonymous">
 <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.0/jquery.min.js'></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/spin.js/2.0.1/spin.min.js'></script> 
 
 <head>
     <style>
@@ -70,7 +71,7 @@
         </div>
         <div class="col-md-4">
             <div class = "card centered">
-                <button id="randombutton" class="btn btn-primary" style="cursor:pointer; border-radius:10px">5 Random Articles</button>
+                <button id="randombutton" class="btn btn-primary">5 Random Articles</button>
             </div>
         </div>
     </div>
@@ -245,16 +246,38 @@
             text.selectAll(".firstsig" + class_word).style("opacity", 1);
         }
     }
-
-    d3.json("body_info.json", function (data) {
-        d3.json("val_feats.json", function (data2) {
-            d3.csv("stances_val.csv", function (data3) {
-                body_info(data, data2, data3);
+    
+    //code for spinner taken from http://bl.ocks.org/eesur/cf81a5ea738f85732707
+    var opts = {
+        lines: 8, // The number of lines to draw
+        length: 9, // The length of each line
+        width: 5, // The line thickness
+        radius: 16, // The radius of the inner circle
+        color: "darkblue", // #rgb or #rrggbb or array of colors
+        speed: 1, // Rounds per second
+        trail: 40, // Afterglow percentage
+        className: 'spinner', // The CSS class to assign to the spinner
+    };
+    //getting data
+    function init(){
+        let spinner = new Spinner(opts).spin(document.getElementById("all"));
+        d3.json("body_info.json", function (data) {
+            d3.json("val_feats.json", function (data2) {
+                d3.csv("stances_val.csv", function (data3) {
+                    spinner.stop();
+                    body_info(data, data2, data3);
+                });
             });
         });
-    });
+    }
+    init();
 
+    document.getElementById("inputbutton").disabled = true;
+    document.getElementById("randombutton").disabled = true;
+    //function that runs data
     function body_info(bodies, headlines, results) {
+        document.getElementById("inputbutton").disabled = false;
+        document.getElementById("randombutton").disabled = false;
         //cleaning body text data
         for (let i = 0; i < 5000; i++) {
             if (bodies[i] != undefined) { //if element exists
@@ -457,7 +480,7 @@
             try{
                 choose_selected(headline_id[d3.select("#searchbar").property("value")]);
             } catch(error) {
-                d3.select("#all").append("div").text("Couldn't find article")
+                d3.select("#all").append("div").text("We're sorry, we couldn't find that headline")
                     .style("text-align","center");
             }
         });
