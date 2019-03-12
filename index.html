@@ -75,7 +75,8 @@
             </div>
         </div>
     </div>
-    <div id="all"></div>
+    <div id="all">
+    </div>
 </body>
 <script>
     let width = 1000,
@@ -430,19 +431,26 @@
                 })
             })
 
-            article.append("div")
-                .attr("class", "alldiv")
-                .attr("id", "type_words" + index);
+            let type_container = article.append("div").attr("class","row text-center")
+                .attr("id","type_words" + index);
+            let button_group = type_container.append("div")
+                .attr("class", "btn-group btn-group-toggle")
+                .attr("data-toggle","buttons")
+                .style("margin","10 auto")
+                .style("display","inline-block")
+                .style("text-align","center");
             let tooltip = article.append("div")
                 .attr("class", "container")
                 .attr("id", "tooltip")
                 .html("<br><br><br>")
                 .style("opacity", 0);
             type_words.forEach(function (d, i) {
-                d3.select("#type_words" + index).append("span")
-                    .text(d + " ")
-                    .style("color", colors[i])
-                    .on("mouseover", function () {
+                button_group.append("button")
+                    .attr("type","button")
+                    .attr("class","btn border")
+                    .text(d)
+                    .style("color",colors[i])
+                    .on("click",function () {
                         let html = "First Sentence cos similarity value: " + head["cos_tokens_fst"].toFixed(
                             2) + "<br>";
                         html = html + "Significant Sentence cos similarity value: " + head["cos_tokens_sig"]
@@ -452,6 +460,7 @@
                         tooltip.html(html);
                         tooltip.transition().duration(300).style("opacity", 1);
                         let word = d3.select(this);
+                        word.attr("checked",true);
                         let word_color = word.style("color");
                         text.selectAll("span").style("opacity", 0.5);
                         if (word_color === colors[0]) {
@@ -468,10 +477,8 @@
                             select_class_opacity(text, "sig");
                         } else if (word_color === colors[6]) {
                             text.selectAll("span").style("opacity", 1);
+                            tooltip.transition().duration(300).style("opacity",0);
                         }
-                    })
-                    .on("mouseout", function () {
-                        tooltip.transition().duration(300).style("opacity", 0);
                     });
             });
         }
