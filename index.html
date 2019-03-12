@@ -91,23 +91,23 @@
 
     //prereq: color2 is either yellow or lawngreen, color1 is one of the first 4 colors
     function blend_color(color1, color2) {
-        if (color1 === "indianred" && color2 === "yellow") {
+        if (color1 === colors[0] && color2 === colors[4]) {
             return "#e4a533";
-        } else if (color1 === "royalblue" && color2 === "yellow") {
+        } else if (color1 === colors[1] && color2 === colors[4]) {
             return "#96ac7c";
-        } else if (color1 === "teal" && color2 === "yellow") {
+        } else if (color1 === colors[2] && color2 === colors[4]) {
             return "#73b946";
-        } else if (color1 === "deeppink" && color2 === "yellow") {
+        } else if (color1 === colors[3] && color2 === colors[4]) {
             return "#ff7e51"
-        } else if (color1 === "indianred" && color2 === "lawngreen") {
+        } else if (color1 === colors[0] && color2 === colors[5]) {
             return "#a9a433";
-        } else if (color1 === "royalblue" && color2 === "lawngreen") {
+        } else if (color1 === colors[1] && color2 === colors[5]) {
             return "#5cab7c";
-        } else if (color1 === "teal" && color2 === "lawngreen") {
+        } else if (color1 === colors[2] && color2 === colors[5]) {
             return "#3ebe40";
-        } else if (color1 === "deeppink" && color2 === "lawngreen") {
+        } else if (color1 === colors[3] && color2 === colors[5]) {
             return "#c47c51";
-        } else if ((color1 === "yellow" && color2 === "lawngreen") || (color1 === "lawngreen" && color2 === "yellow")) {
+        } else if ((color1 === colors[4] && color2 === colors[5]) || (color1 === colors[5] && color2 === colors[4])) {
             return "#befe00";
         }
     }
@@ -249,19 +249,19 @@
     }
     
     //code for spinner taken from http://bl.ocks.org/eesur/cf81a5ea738f85732707
-    var opts = {
-        lines: 8, // The number of lines to draw
-        length: 9, // The length of each line
-        width: 5, // The line thickness
-        radius: 16, // The radius of the inner circle
-        color: "darkblue", // #rgb or #rrggbb or array of colors
-        speed: 1, // Rounds per second
-        trail: 40, // Afterglow percentage
-        className: 'spinner', // The CSS class to assign to the spinner
+    var spin_settings = {
+        lines: 8, 
+        length: 9, 
+        width: 5, 
+        radius: 16,
+        color: "darkblue", 
+        speed: 1, 
+        trail: 40, 
+        className: 'spinner',
     };
     //getting data
     function init(){
-        let spinner = new Spinner(opts).spin(document.getElementById("all"));
+        let spinner = new Spinner(spin_settings).spin(document.getElementById("all"));
         d3.json("body_info.json", function (data) {
             d3.json("val_feats.json", function (data2) {
                 d3.csv("stances_val.csv", function (data3) {
@@ -447,7 +447,12 @@
             type_words.forEach(function (d, i) {
                 button_group.append("button")
                     .attr("type","button")
-                    .attr("class","btn border")
+                    .attr("class",function(){
+                        if(i === 6){
+                            return "btn btn-secondary border active";
+                        }
+                        return "btn border";
+                    })
                     .text(d)
                     .style("color",colors[i])
                     .on("click",function () {
@@ -459,8 +464,10 @@
                         console.log(results[head_index]);
                         tooltip.html(html);
                         tooltip.transition().duration(300).style("opacity", 1);
+
+                        button_group.selectAll(".btn").attr("class","btn border");
                         let word = d3.select(this);
-                        word.attr("checked",true);
+                        word.attr("class","btn btn-secondary border active");
                         let word_color = word.style("color");
                         text.selectAll("span").style("opacity", 0.5);
                         if (word_color === colors[0]) {
@@ -478,7 +485,7 @@
                         } else if (word_color === colors[6]) {
                             text.selectAll("span").style("opacity", 1);
                             tooltip.transition().duration(300).style("opacity",0);
-                        }
+                        } 
                     });
             });
         }
