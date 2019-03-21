@@ -587,7 +587,7 @@
             })
             x = 0;
             rcounts.forEach(function(d,i){
-                let width = svg_width * head["cos_tokens_fst"].toFixed(2) * (d / rsum);
+                let width = svg_width * head["cos_tokens_sig"].toFixed(2) * (d / rsum);
                 right_svg.append("rect")
                     .attr("x",x).attr("y",0)
                     .attr("width",width).attr("height",svg_height)
