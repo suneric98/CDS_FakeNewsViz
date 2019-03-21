@@ -10,11 +10,6 @@
         h1 {font-weight: 200; font-family: verdana; text-align: center}
         text {font-family: "Gill Sans"}
         span {font-family: "Gill Sans"}
-        div.a {margin: 10px 0 10px 10px;
-            width: 800;
-            text-align: center;
-            margin: 0 auto;
-            box-sizing: border-box}
         .autocomplete {
             position: relative;
             display: inline-block;
@@ -54,8 +49,13 @@
     <div class="card centered" width = "400" height = "700">
         <h1>CDS Insights - Fake News Project - Relevance Detection
         Visualization</h1> 
-        <p class="text-center">Type in an article headline to look up all the article bodies paired
-        with that headline, or choose 5 random article/headline pairs</p>
+        <div class = "row justify-content-center">
+            <div class = "card text-center" width = 400>Type in an article headline to look up all the article bodies paired
+            with that headline, or choose 5 random article/headline pairs. This
+            visualization displays the features we used in our algorithm to predict
+            relevance, which is the cosine similarity values of the first and most
+            significant sentence compared to the article headline. </div>
+        </div>
     </div>
     <div class="row justify-content-center">
         <div class = "col-md-4">
@@ -321,7 +321,7 @@
                 let head = headline_data[index];
                 let body = bodies[headline_data[index].body_id];
                 displayHead(index, head, body);
-                displayBody(index, headline_data[index].body_id, head, body);
+                displayFeatures(article_id, index, headline_data[index].body_id, head, body)
             }
         }
         d3.select("#randombutton").on("click", random_articles);
@@ -333,7 +333,7 @@
                 let head = headline_data[index];
                 let body = bodies[headline_data[index].body_id];
                 displayHead(index, head, body);
-                displayBody(index, headline_data[index].body_id, head, body);
+                displayFeatures(article_id, index, headline_data[index].body_id, head, body)
             }
         }
 
@@ -361,8 +361,9 @@
             headline.append("br");
         }
 
-        function displayBody(head_index, index, head, body) { //Displaying the body
-            article = d3.select("#article" + article_id);
+        //displays article text
+        function displayBody(a_id, head_index, index, head, body) { //Displaying the body
+            let article = d3.select("#article" + a_id);
             let text = article.append("div")
                 .attr("id", "text" + index)
                 .attr("class", "overflow-auto border border-secondary")
@@ -439,35 +440,21 @@
                 .style("margin","10 auto")
                 .style("display","inline-block")
                 .style("text-align","center");
-            let tooltip = article.append("div")
-                .attr("class", "container")
-                .attr("id", "tooltip")
-                .html("<br><br><br>")
-                .style("opacity", 0);
             type_words.forEach(function (d, i) {
                 button_group.append("button")
                     .attr("type","button")
                     .attr("class",function(){
                         if(i === 6){
-                            return "btn btn-secondary border active";
+                            return "btn btn-light border active";
                         }
                         return "btn border";
                     })
                     .text(d)
                     .style("color",colors[i])
                     .on("click",function () {
-                        let html = "First Sentence cos similarity value: " + head["cos_tokens_fst"].toFixed(
-                            2) + "<br>";
-                        html = html + "Significant Sentence cos similarity value: " + head["cos_tokens_sig"]
-                            .toFixed(2) + "<br>";
-                        html = html + "Result: " + results[head_index].Stance;
-                        console.log(results[head_index]);
-                        tooltip.html(html);
-                        tooltip.transition().duration(300).style("opacity", 1);
-
                         button_group.selectAll(".btn").attr("class","btn border");
                         let word = d3.select(this);
-                        word.attr("class","btn btn-secondary border active");
+                        word.attr("class","btn btn-light border active");
                         let word_color = word.style("color");
                         text.selectAll("span").style("opacity", 0.5);
                         if (word_color === colors[0]) {
@@ -484,10 +471,156 @@
                             select_class_opacity(text, "sig");
                         } else if (word_color === colors[6]) {
                             text.selectAll("span").style("opacity", 1);
-                            tooltip.transition().duration(300).style("opacity",0);
                         } 
                     });
             });
+        }
+
+        //displaying first sentence and sig sent features
+        function displayFeatures(a_id, head_index, index, head, body){
+            let article = d3.select("#article" + a_id);
+            let features = article.append("div")
+                .attr("class","card centered");
+            let fir_sig = features.append("div")
+                .attr("class","row justify-content-center")
+                .attr("id","features" + index);
+            let left = fir_sig.append("div")
+                .attr("class","col-md-6")
+                .attr("id","first" + index);
+            let right = fir_sig.append("div")
+                .attr("class", "col-md-6")
+                .attr("id","sig" + index);
+            left.append("div").html("First Sentence of article: <br>");
+            right.append("div").html("Significant Sentence of article: <br>");
+
+            //first and significant sentence
+            let f_sent = body.first_sentence.raw;
+            let s_sent = body.significant_sentence.raw;
+            
+            //getting counts of each token
+            let lcounts = [0,0,0,0];
+            let rcounts = [0,0,0,0];
+            //overflow boundaries for text
+            let ltext = left.append("div")
+                .attr("class", "overflow-auto border border-secondary")
+                .style("height", 60)
+                .style("overflow", "auto");
+            let rtext = right.append("div")
+                .attr("class", "overflow-auto border border-secondary")
+                .style("height", 60)
+                .style("overflow", "auto");
+
+            //iterating through text
+            f_sent.split(/(\s)/g).forEach(function(word){
+                let span_class = making_class(word, head, false, true);
+                ltext.append("span")
+                    .attr("class",function(){
+                        if(span_class.includes("noun")){
+                            lcounts[0] = lcounts[0] + 1;
+                        } else if(span_class.includes("verb")){
+                            lcounts[1] = lcounts[1] + 1;
+                        } else if(span_class.includes("adj")){
+                            lcounts[2] = lcounts[2] + 1;
+                        } else if(span_class.includes("adv")){
+                            lcounts[3] = lcounts[3] + 1;
+                        }
+                        return span_class;
+                    })
+                    .style("background-color", class_to_color(span_class))
+                    .text(word);
+            })
+            s_sent.split(/(\s)/g).forEach(function(word){
+                let span_class = making_class(word, head, true, false);
+                rtext.append("span")
+                    .attr("class",function(){
+                        if(span_class.includes("noun")){
+                            rcounts[0] = rcounts[0] + 1;
+                        } else if(span_class.includes("verb")){
+                            rcounts[1] = rcounts[1] + 1;
+                        } else if(span_class.includes("adj")){
+                            rcounts[2] = rcounts[2] + 1;
+                        } else if(span_class.includes("adv")){
+                            rcounts[3] = rcounts[3] + 1;
+                        }
+                        return span_class;
+                    })
+                    .style("background-color", class_to_color(span_class))
+                    .text(word);
+            })
+            
+            //cos simlarity values
+            left.append("span").html("<br>First sentence cos similarity value: " + head["cos_tokens_fst"].toFixed(2) + "<br>");
+            right.append("span").html("<br>Significant sentence cos similarity value: " + head["cos_tokens_sig"].toFixed(2) + "<br>");
+            
+            //svg elements
+            let svg_width = parseInt(left.style("width"),10) - 20;
+            let svg_height = 40;
+            let left_svg = left.append("svg").attr("id", "left" + index)
+                .attr("height", svg_height)
+                .attr("width", svg_width);
+            let right_svg = right.append("svg").attr("id","right" + index)
+                .attr("height", svg_height)
+                .attr("width", svg_width);
+
+            //percentage bar
+            left_svg.append("rect")
+                .attr("x",0).attr("y",0)
+                .attr("width",svg_width).attr("height",svg_height)
+                .style("fill",colors[4]);
+            right_svg.append("rect")
+                .attr("x",0).attr("y",0)
+                .attr("width",svg_width).attr("height",svg_height)
+                .style("fill",colors[5]);
+
+            //adding how much of percentage bar is filled
+            let x = 0;
+            const add = (a,b) => a + b;
+            let lsum = lcounts.reduce(add) === 0 ? 1 : lcounts.reduce(add);
+            let rsum = rcounts.reduce(add) === 0 ? 1 : rcounts.reduce(add);
+            lcounts.forEach(function(d,i){
+                let width = svg_width * head["cos_tokens_fst"].toFixed(2) * (d / lsum);
+                left_svg.append("rect")
+                    .attr("x",x).attr("y",0)
+                    .attr("width",width).attr("height",svg_height)
+                    .style("fill",colors[i]);
+                x = x + width;
+            })
+            x = 0;
+            rcounts.forEach(function(d,i){
+                let width = svg_width * head["cos_tokens_fst"].toFixed(2) * (d / rsum);
+                right_svg.append("rect")
+                    .attr("x",x).attr("y",0)
+                    .attr("width",width).attr("height",svg_height)
+                    .style("fill",colors[i]);
+                x = x + width;
+            })
+
+            features.append("row")
+                .attr("class","row justify-content-center")
+                .append("span")
+                .attr("class", "text-center")
+                .html("Our result: NA <br> Actual Result: " + results[head_index].Stance + "<br>");
+
+            let check = false;
+            features.append("div")
+                .attr("class", "btn-group text-center")
+                .attr("data-toggle","buttons")
+                .style("margin","10 auto")
+                .style("display","inline-block")
+                .append("button")
+                .attr("type","button")
+                .attr("class","btn btn-light border my-2")
+                .text("Click to show/hide Article Body")
+                .on("click", function(){ 
+                    if(!check){ //if isn't displayed already
+                        displayBody(a_id, head_index, index, head, body); 
+                    } else {
+                        d3.select("#text" + index).remove();
+                        d3.select("#type_words" + index).remove();
+                        d3.select("#tooltip" + index).remove();
+                    }
+                    check = !check;
+                });
         }
 
         d3.select("#inputbutton").on("click", function(){
